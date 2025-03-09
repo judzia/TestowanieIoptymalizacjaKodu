@@ -1,0 +1,1 @@
+ Otwórz dwa obrazy jednocześnie w osobnych oknach
