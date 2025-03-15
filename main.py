@@ -39,29 +39,71 @@ else:
 
 # zad 5
 
-#image[:h//2, :w//2] = (255,0,0)
-#cv2.imshow("Po kolorowaniu cwiartki", image)
-#cv2.waitKey(0)
-#cv2.destroyAllWindows()
+top_left = image[0:center_y, 0:center_x]
+top_right = image[0:center_y, center_x:w]
+bottom_left = image[center_y:h, 0:center_x]
+bottom_right = image[center_y:h, center_x:w]
+    
+# Wyświetlenie każdej ćwiartki osobno
+cv2.imshow("Top Left", top_left)
+cv2.imshow("Top Right", top_right)
+cv2.imshow("Bottom Left", bottom_left)
+cv2.imshow("Bottom Right", bottom_right)
 
-
-[cX,cY] = [w//2, h//2]
-top_left = image[0:cY, 0:cX]
-top_right = image[0:cY, cX:w]
-bottom_left = image[cY:h, 0:cX]
-bottom_right = image[cY:h, cX:w]
-
-image[0:cY, 0:cX] = (255,0,0)
-
-cv2.imshow("Zmieniony obraz", image)
+# Pokolorowanie górnej lewej ćwiartki na niebiesko
+top_left[:] = (255, 0, 0)
+    
+# Ponowne wyświetlenie podzielonych obrazów po zmianie
+cv2.imshow("Top Left (Blue)", top_left)
+cv2.imshow("Top Right", top_right)
+cv2.imshow("Bottom Left", bottom_left)
+cv2.imshow("Bottom Right", bottom_right)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
 # zad 6
 
-half_size = 50
-image[center_y-half_size:center_x+half_size, center_x-half_size:center_x+half_size] = (0,0,255)
-cv2.imshow("Po wypelnieniu srodka", image)
+start_x, start_y = center_x - 50, center_y - 50
+end_x, end_y = center_x + 50, center_y + 50
+image[start_y:end_y, start_x:end_x] = (0, 0, 255)
+cv2.imshow("Po zmianie pikseli w kwadracie", image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
+# zad 7
+
+crop = image[center_y - h//6:center_y + h//6, center_x - w//6:center_x + w//6]
+cv2.imshow("Cropped Center", crop)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+
+# zad 8
+cv2.imshow("Przed zmiana pikseli w wierszu", image)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+if h > 100:
+    image[100, :] = (0, 255, 0)
+
+cv2.imshow("Po zmianie pikseli w wierszu 100", image)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+ # zad 9
+image[50:100, 50:100] = (255, 255, 255)
+    
+# zad 10
+b1, g1, r1 = image[50, 50]
+b2, g2, r2 = image[200, 200]
+print(f'Roznice: R={abs(r1 - r2)}, G={abs(g1 - g2)}, B={abs(b1 - b2)}')
+    
+# zad 11
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(gray)
+print(f'Najjasniejszy piksel: {maxLoc}, Wartosc: {maxVal}')
+    
+# Wyświetlenie końcowego obrazu
+cv2.imshow("Final Image", image)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
