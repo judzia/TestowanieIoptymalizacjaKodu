@@ -18,14 +18,14 @@ print(f'height: {h} pixels')
 print(f'channels: {c}')  # Dla kolorowego zdjęcia powinno być 3 (RGB)
 
 # ZAD 3
-image_gray = cv2.imread("kolejnykotek.jpg", cv2.IMREAD_GRAYSCALE)
+image_gray = cv2.imread("wakacjeKotek.png", cv2.IMREAD_GRAYSCALE)
 print(f'Gray image shape: {image_gray.shape}')  # Powinien mieć tylko 2 wymiary (wysokość, szerokość)
 channels_gray = 1 if len(image_gray.shape) == 2 else image_gray.shape[2]
 print(f'Channels (gray): {channels_gray}')  # Dla obrazu w skali szarości powinno być 1
 
 # ZAD 4
-cv2.imwrite("kolejnykotek_gray.jpg", image_gray)
-print("Obraz w skali szarosci zapisano jako kolejnykotek_gray.jpg")
+cv2.imwrite("wakacjeKotek_gray.png", image_gray)
+print("Obraz w skali szarosci zapisano jako wakacjeKotek_gray.png")
 
 # ZAD 5
 cv2.imshow("Kolorowy obraz", image)
