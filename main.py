@@ -53,8 +53,13 @@ cv2.waitKey(0)
 pretty_green = (133, 205, 5)
 
 canvas5 = np.zeros((300, 300, 3), dtype="uint8")
-for r in range(20, 220, 20):
-    cv2.rectangle(canvas5, (0,0), (100,100), pretty_green, 1)
+(centerX, centerY) = (canvas5.shape[1] // 2, canvas5.shape[0] // 2)
+
+for size in range(20, 220, 20):
+    top_left = (centerX - size // 2, centerY - size // 2)
+    bottom_right = (centerX + size // 2, centerY + size // 2)
+
+    cv2.rectangle(canvas5, top_left, bottom_right, pretty_green, 1)
 
 cv2.imshow("Canvas", canvas5)
 cv2.waitKey(0)
