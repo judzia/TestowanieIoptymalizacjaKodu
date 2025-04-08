@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-# ---- Zadanie 1a: Trójkąt i operacje bitowe ----
+# ---- Zadanie 1a: Trojkat i operacje bitowe ----
 triangle = np.zeros((300, 300), dtype="uint8")
 pts = np.array([[150, 25], [275, 275], [25, 275]], np.int32)
 pts = pts.reshape((-1, 1, 2))
@@ -30,7 +30,7 @@ bitwiseNot = cv2.bitwise_not(triangle)
 cv2.imshow("NOT Triangle", bitwiseNot)
 cv2.waitKey(0)
 
-# ---- Zadanie 1b: Przesunięcie trójkąta ----
+# ---- Zadanie 1b: Przesuniecie trojkata ----
 triangle_shifted = np.zeros((300, 300), dtype="uint8")
 pts_shifted = np.array([[200, 75], [300, 275], [100, 275]], np.int32)
 pts_shifted = pts_shifted.reshape((-1, 1, 2))
@@ -54,12 +54,12 @@ bitwiseNot_shifted = cv2.bitwise_not(triangle_shifted)
 cv2.imshow("NOT Shifted Triangle", bitwiseNot_shifted)
 cv2.waitKey(0)
 
-# ---- Zadanie 2: Wykrywanie różnic między obrazami ----
+# ---- Zadanie 2: Wykrywanie roznic miedzy obrazami ----
 img1 = cv2.imread("obrazek1.jpg")
 img2 = cv2.imread("obrazek4.jpg")
 
 if img1 is None or img2 is None:
-    print("Błąd: Nie udało się wczytać jednego z obrazów do porównania!")
+    print("Blad: Nie udalo sie wczytac jednego z obrazow do porownania!")
 else:
     img1_gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     img2_gray = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
@@ -70,7 +70,7 @@ else:
     img2_bin = cv2.threshold(img2_gray, 128, 255, cv2.THRESH_BINARY)[1]
 
     xor_result = cv2.bitwise_xor(img1_bin, img2_bin)
-    cv2.imshow("Różnice (XOR)", xor_result)
+    cv2.imshow("Roznice (XOR)", xor_result)
     
 
 cv2.waitKey(0)
