@@ -1,0 +1,442 @@
+
+3. W celu optymalizacji szybkości treningu zastosować:
+a. akcelerator GPU - przygotować raport porównawczy z czasem trenowania
+bez i z GPU,
+b. transfer learning - przygotować raport porównawczy z transfer
+learningiem i bez, interesuje nas tutaj dojście do pewnego poziomu
+dokładności np. 80%.
+
+
+
+RAPORT:
+
+Punkt 3a: Porównanie CPU vs GPU (bez transfer learningu)
+*1. Czas trenowania:
+CPU: ~43 minut (252–289s na epokę)
+
+GPU: ~2.4 minuty (średnio ~6s na epokę)
+
+Wniosek: Zastosowanie GPU drastycznie skróciło czas treningu (ponad 18× szybciej).
+
+*2. Dokładność:
+
+|         | Training Accuracy | Validation Accuracy |
+| ------- | ----------------- | ------------------- |
+| **CPU** | 0.9725            | 0.7720              |
+| **GPU** | 0.9720            | 0.5460              |
+
+Wniosek:
+- Model na GPU przeuczył się - świetnie radził sobie na treningu, ale nie generalizował dobrze na danych walidacyjnych.
+- Może to być efekt zbyt szybkiego treningu bez stabilizacji wag (np. za duży learning rate lub zbyt mało regularizacji na GPU).
+
+*3. Loss (strata):
+
+-CPU: val_loss spada stabilnie do 0.2-0.4, później trochę wzrasta (overfitting pod koniec).
+
+-GPU: val_loss spada, ale skacze gwałtownie (np. 7.77!), co sugeruje niestabilne uczenie się modelu na GPU.
+
+*4. F1-score - jakość klasyfikacji:
+
+| Klasa     | CPU (F1) | GPU (F1) |
+| --------- | -------- | -------- |
+| Arborio   | 0.94     | 0.18     |
+| Basmati   | 0.98     | 0.79     |
+| Ipsala    | 0.00     | 0.00     |
+| Jasmine   | 0.64     | 0.50     |
+| Karacadag | 0.97     | 0.88     |
+
+
+Wniosek:
+
+- Na GPU model miał problem głównie z klasą Ipsala (totalny brak trafień) i ogólną stabilnością.
+
+- CPU model osiągnął znacznie lepsze wyniki ogólne, mimo dłuższego treningu.
+
+
+Punkt 3b: Transfer Learning (GPU)
+
+| Epoka | Training Acc | Validation Acc | Val Loss |
+| ----- | ------------ | -------------- | -------- |
+| 1     | 0.673        | 0.958          | 0.137    |
+| 2     | 0.962        | 0.980          | 0.086    |
+| 3     | 0.982        | 0.968          | 0.097    |
+
+
+Wyniki:
+-Już po pierwszej epoce mam 95.8% dokładności - model osiąga świetną generalizację prawie od razu!!!!
+
+-Strata walidacyjna bardzo niska i stabilna - brak niestabilnych skoków.
+
+Wniosek:
+
+-Transfer learning dramatycznie przyspiesza i stabilizuje proces nauki.
+
+-Szybko osiągnęłam ponad 80% dokładności, nawet po jednej epoce!!
+
+**Ściągawka co można wyczytać z loss i accuracy:**
+
+->Gdy loss maleje, a accuracy rośnie - model się uczy poprawnie.
+
+->Jeśli training accuracy rośnie, ale validation accuracy spada lub stoi w miejscu - to overfitting.
+
+->Wysoki val_loss i niska val_accuracy - model nie generalizuje dobrze (problemy z danymi, złe hyperparametry, brak regularizacji).
+
+->Skaczący val_loss - może sugerować zbyt duży learning rate lub źle zbalansowane klasy.
+
+
+KRÓTKI RAPORCIK (RAPORT W SKRÓCIE):
+
+Punkt 3a - Akceleracja GPU
+Przeprowadzono porównanie trenowania modelu CNN na CPU i GPU. Zastosowanie GPU pozwoliło skrócić czas treningu z 43 minut do zaledwie 2.4 minut (~18× szybciej). 
+Jednakże, mimo szybkiego treningu, model uczony na GPU uzyskał wyraźnie gorsze wyniki walidacyjne (dokładność: 54.6%) w porównaniu do CPU (dokładność: 77.2%).
+Dodatkowo, model GPU wykazywał niestabilność w val_loss, co sugeruje przeuczenie lub problemy z generalizacją.
+
+Punkt 3b - Transfer Learning
+Zastosowanie transfer learningu (na GPU) znacząco poprawiło jakość modelu - 
+już po jednej epoce uzyskano dokładność walidacyjną na poziomie 95.8%, a po trzech epokach utrzymywała się ona w zakresie 96–98%. 
+Strata walidacyjna była bardzo niska i stabilna (ok. 0.08–0.1).
+Model osiągnął ponad 80% dokładności już na początku treningu, co świadczy o skuteczności wykorzystania wcześniej wytrenowanych wag.
+
+
+
+PUNKT 4 – OPTYMALIZACJE MODELU CNN (ResNet50)
+
+MODEL BAZOWY (CPU)
+-Czas treningu: 42.94 minut
+
+-Dokładność treningowa: 0.9725
+
+-Dokładność walidacyjna: 0.7720
+
+-F1-score (macro avg): 0.71
+
+-Czas / jakość: bardzo długi czas, umiarkowana jakość
+
+
+4A)  NORMALIZACJA DANYCH
+
+Co zmieniono?
+Zastosowano normalizację obrazów (np. podział pikseli przez 255).
+Model trenowany na GPU.
+
+Wyniki po normalizacji:
+
+-Czas treningu: 0.70 minut
+
+-Dokładność treningowa: 0.9420
+
+-Dokładność walidacyjna: 0.9440
+
+-F1-score (macro avg): 0.94
+
+Porównanie z modelem bazowym:
+
+| Cecha                     | Model Bazowy (CPU) | Po normalizacji (GPU)  |
+| ------------------------- | ------------------ | ---------------------- |
+| Val Accuracy              | 0.7720             | **0.9440**            |
+| F1-score (macro avg)      | 0.71               | **0.94**              |
+| Czas treningu             | 42.94 min          | **0.70 min**           |
+| Wydajność (czas + jakość) | ❌ słabo            | ✅ **znacząca poprawa** |
+
+Wniosek: Sama normalizacja daje ogromny boost dokładności oraz radykalnie zmniejsza czas trenowania na GPU. 
+To must-have. :))
+
+4B) AUGMENTACJA DANYCH
+
+Co zmieniono?
+Użyto przekształceń (prawdopodobnie: rotation_range, zoom_range, horizontal_flip, width_shift, height_shift itp.).
+Model trenowany z wagami ResNet50 i użyciem augmentacji.
+Celem augmentacji jest wzbogacenie zbioru treningowego o różnorodne warianty obrazów, co pomaga poprawić generalizację modelu.
+
+
+
+Wyniki trenowania:
+
+| Epoka | Accuracy (train) | Accuracy (val) | Val Loss   |
+| ----- | ---------------- | -------------- | ---------- |
+| 1     | 0.6736           | 0.9340         | 0.1879     |
+| 5     | 0.9331           | 0.9660         | 0.0978     |
+| 10    | 0.9472           | **0.9780**     | **0.0648** |
+
+Czas treningu: 1.86 minuty
+ Końcowa dokładność treningowa: 0.9525
+ Końcowa dokładność walidacyjna: 0.9780
+
+Metryki ewaluacyjne:
+
+
+| Klasa       | Precision | Recall   | F1-score |
+| ----------- | --------- | -------- | -------- |
+| Arborio     | 0.97      | 0.99     | 0.98     |
+| Basmati     | 0.98      | 0.97     | 0.97     |
+| Ipsala      | 0.96      | 1.00     | 0.98     |
+| Jasmine     | 0.97      | 0.94     | 0.95     |
+| Karacadag   | 1.00      | 0.98     | 0.99     |
+| **Średnia** | **0.98**  | **0.98** | **0.98** |
+
+Wnioski:
+Augmentacja znacząco poprawiła dokładność walidacyjną (z 0.9720 do 0.9780).
+
+F1-score w klasie Ipsala wzrósł z 0.00 (w wersji bazowej bez optymalizacji) do 0.98, co potwierdza, że augmentacja pomaga modelowi nauczyć się lepiej rozróżniać niedoreprezentowane klasy.
+
+Model wykazuje wysoką stabilność i dobrą generalizację - nie występuje overfitting mimo intensywniejszego treningu.
+
+4 C) DROPOUT
+
+Co zostało zmienione?
+W tej wersji wprowadzono mechanizm Dropout do warstw gęstych (Dense) modelu. Dropout losowo "wyłącza" część neuronów podczas treningu,
+co wymusza, by model nie polegał zbyt mocno na żadnym konkretnym neuronie - co również ogranicza overfitting.
+
+| Epoka | Accuracy (train) | Accuracy (val) | Val Loss |
+| ----- | ---------------- | -------------- | -------- |
+| 1     | 0.6545           | 0.9660         | 0.1082   |
+| 5     | 0.9485           | 0.9820         | 0.0574   |
+| 10    | 0.9674           | **0.9640**     | 0.0910   |
+
+Czas treningu: 0.81 minuty
+ Końcowa dokładność treningowa: 0.9635
+ Końcowa dokładność walidacyjna: 0.9640
+
+Metryki ewaluacyjne:
+
+| Klasa       | Precision | Recall   | F1-score |
+| ----------- | --------- | -------- | -------- |
+| Arborio     | 1.00      | 0.94     | 0.97     |
+| Basmati     | 0.89      | 1.00     | 0.94     |
+| Ipsala      | 1.00      | 1.00     | 1.00     |
+| Jasmine     | 0.99      | 0.88     | 0.93     |
+| Karacadag   | 0.95      | 1.00     | 0.98     |
+| **Średnia** | **0.97**  | **0.96** | **0.96** |
+
+
+Wnioski:
+-Dropout zwiększył dokładność ogólną modelu względem wersji bazowej i nadal zapewnia wysokie F1-score,
+szczególnie w klasach Ipsala i Karacadag.
+
+-Lekko spadła dokładność walidacyjna w porównaniu do wersji z augmentacją (0.9640 vs 0.9780).
+
+-Dropout działa dobrze jako forma regularyzacji, ale nie przynosi aż tak dużych zysków w generalizacji jak augmentacja danych.
+
+4 D) Dodanie danych - Użycie oryginalnego zbioru danych
+
+Co zostało zmienione?
+W tej wersji skorzystałam z oryginalnego datasetu z wszystkimi danymi.
+
+Dane:
+
+-Zbiór treningowy: 60 000 obrazów, 5 klas
+
+-Zbiór walidacyjny: 15 000 obrazów, 5 klas
+
+-Liczba epok: 10
+
+ Całkowity czas treningu: ~11.76 minut
+ Dokładność treningowa (finalna): 99.56%
+ Dokładność walidacyjna (finalna): 99.62%
+
+ | Klasa         | Precision | Recall | F1-score | Support |
+| ------------- | --------- | ------ | -------- | ------- |
+| **Arborio**   | 0.99      | 1.00   | 0.99     | 3000    |
+| **Basmati**   | 1.00      | 1.00   | 1.00     | 3000    |
+| **Ipsala**    | 1.00      | 1.00   | 1.00     | 3000    |
+| **Jasmine**   | 1.00      | 1.00   | 1.00     | 3000    |
+| **Karacadag** | 1.00      | 0.99   | 0.99     | 3000    |
+
+
+Accuracy (ogólna): 1.00
+Macro avg: precision 1.00 | recall 1.00 | f1-score 1.00
+Weighted avg: precision 1.00 | recall 1.00 | f1-score 1.00
+
+Wnioski
+Model osiągnął znakomite wyniki - niemal 100% dokładności zarówno na treningu, jak i walidacji, co oznacza, że:
+
+-sieć głęboka bardzo dobrze dopasowała się do danych,
+
+-dane są dobrze rozdzielne klasowo (łatwo odróżnialne),
+
+-zastosowanie oryginalnego dużego zbioru danych pomogło zwiększyć ogólną skuteczność klasyfikatora,
+
+-model nie wykazuje poważnych objawów overfittingu - dokładności walidacyjne są porównywalne do treningowych.
+
+
+
+# PODSUMOWANIE ogólne
+
+| Technika                | Val Accuracy | F1-score | Czas treningu | Wnioski                         |
+| ----------------------- | ------------ | -------- | ------------- | ------------------------------- |
+| Model bazowy (CPU)      | 0.7720       | 0.71     | 42.94 min     | Długi czas, słaba generalizacja |
+| GPU (bez optymalizacji) | 0.5460       | -        | 2.4 min       | Niestabilność, słabe wyniki     |
+| Transfer Learning       | 0.98         | \~0.98   | <3 min        | Świetna jakość i stabilność     |
+| Normalizacja            | 0.9440       | 0.94     | 0.70 min      | Ogromna poprawa                 |
+| Augmentacja             | 0.9780       | 0.98     | 1.86 min      | Najlepsza ogólna skuteczność    |
+| Dropout                 | 0.9640       | 0.96     | 0.81 min      | Dobra regularyzacja             |
+| Duży zbiór danych       | 0.9962       | 1.00     | 11.76 min     | Perfekcyjne dopasowanie         |
+
+
+4.E) ROZDZIELCZOSC
+
+| Parametr                | 96×96      | 160×160   | 224×224      |
+| ----------------------- | ---------- | --------- | ------------ |
+| 🕒 Czas treningu        | 0.70 min   | 1.09 min  | \~1.70 min\* |
+| 🔢 Liczba epok          | 10         | 10        | 10           |
+| ✅ Acc (trening)         | 99.87%     | 99.89%    | 99.51%       |
+| ✅ Acc (walidacja)       | 97.6%      | 99.0%     | 99.2%        |
+| 🔍 F1-score (macro avg) | 0.98       | 0.99      | 0.99         |
+| 🔁 Val loss (najniższa) | **0.0257** | 0.0219    | **0.0159**   |
+| 🧠 Najniższy val\_loss  | epoka 7    | epoka 9   | epoka 10     |
+| 🧪 Klasa najtrudniejsza | Arborio    | Karacadag | Jasmine      |
+
+
+**WNIOSKI**
+
+Skuteczność
+
+Wszystkie modele osiągnęły bardzo wysoką dokładność (>97%), co świadczy o dobrej separowalności klas w zbiorze.
+
+Model 224×224 osiągnął najwyższą dokładność walidacyjną i najniższą stratę (val_loss), co sugeruje, że większa rozdzielczość pomogła uchwycić więcej szczegółów w danych wejściowych.
+
+Czas trenowania
+
+Czas rośnie wraz z rozmiarem obrazu (logicznie), ale nieproporcjonalnie mocno. Model 224×224 był 2.5x wolniejszy niż 96×96.
+
+
+4 F)
+
+#**Batch-size - raporty**
+
+##Batch size = 32
+Czas treningu: 0 min 42 s (≈ 0.70 min)
+
+Dokł. treningowa: 99.1 %
+
+Dokł. walidacyjna: 98.6 %
+
+Najniższy val loss: 0.028 (Ep. 7)
+
+Makro F1: 0.99
+
+Uwagi:
+
+Najstabilniejsze krzywe (płaskie val loss już od 3 epoki).
+
+Delikatne wzrosty val loss w epokach 6–9, ale bez spadku dokładności.
+
+##Batch size = 64
+Czas treningu: 0 min 43 s (≈ 0.72 min)
+
+Dokł. treningowa: 99.8 %
+
+Dokł. walidacyjna: 99.2 %
+
+Najniższy val loss: 0.029 (Ep. 9)
+
+Makro F1: 0.99
+
+Uwagi:
+
+Najwyższa precyzja Basmati (1.00 / 1.00 / 1.00).
+
+Val loss bardzo równy; kończy z najniższą średnią stratą
+
+## Batch size = 128
+Czas treningu: 1 min 07 s (≈ 1.12 min)
+
+Dokł. treningowa: 99.5 %
+
+Dokł. walidacyjna: 98.4 %
+
+Najniższy val loss: 0.037 (Ep. 6)
+
+Makro F1: 0.98
+
+Uwagi:
+
+Start wymagał 1 - 2 epok „rozruchu”, potem szybki spadek loss.
+
+Nieco wyższe oscylacje val loss oraz najdłuższy czas epoki.
+
+| Batch size | Czas treningu\* | Val Accuracy | Makro F1 | Najniższy val loss |
+| ---------- | --------------- | ------------ | -------- | ------------------ |
+| **32**     | **0 : 42 min**  | 0.986        | 0.99     | 0.028              |
+| **64**     | 0 : 43 min      | **0.992**    | 0.99     | **0.029**          |
+| **128**    | 1 : 07 min      | 0.984        | 0.98     | 0.037              |
+
+
+Najwyższa dokładność uzyskana przy batch = 64 - bez wydłużenia czasu względem 32.
+
+Batch = 32 daje prawie tę samą jakość przy minimalnym obciążeniu pamięci.
+
+Batch = 128 nie poprawia wyników, a wydłuża epokę; warto tylko, 
+gdy GPU lub pamięć pozwalają trenować jeszcze szybciej przez redukcję kroków optymalizera.
+
+4. G)RÓŻNE SIECI
+
+ #VGG16
+Zalety:
+
+Bardzo dobra dokładność (Val Acc: 98.4%, F1: 0.98)
+
+Prosta i dobrze znana architektura
+
+Stabilna przy klasyfikacji obrazów
+
+Wady:
+
+Bardzo duża liczba parametrów (ok. 138 mln)
+
+Długi czas treningu na CPU lub bez GPU
+
+#ResNet101
+Zalety:
+
+Najlepszy wynik (Val F1-score: 0.99)
+
+Skuteczna generalizacja (residual blocks)
+
+Głębsza sieć - lepiej wyłapuje złożone wzorce
+
+Wady:
+
+Większe zużycie pamięci RAM/VRAM
+
+
+# InceptionV3
+Zalety:
+
+Bardzo dobra jakość po tuningu (Val F1-score: 0.91)
+
+Efektywna struktura (rozbijanie konwolucji)
+
+Lepsza wydajność przy ograniczonych zasobach niż VGG/ResNet
+
+Wady:
+
+Najdłuższy czas treningu (2.29 min)
+
+Gorsze wyniki bez tuningu
+
+Wrażliwy na dobór hiperparametrów
+
+#MobileNetV2
+Zalety:
+
+Najszybszy model (0.64 min)
+
+Bardzo lekka architektura (idealna do mobilnych aplikacji)
+
+Wysoka jakość przy małym rozmiarze modelu (F1: 0.96)
+
+Wady:
+
+Minimalnie słabsza skuteczność niż ResNet/VGG
+
+Mniej odporna na trudniejsze zbiory danych
+
+
+#MEGA PODSUMOWANIE
+| Model           | Trening Acc. | Val. Acc. | Val. F1-score (avg) | Czas treningu | Parametry startowe | Zalety                                      | Wady                                              |
+| --------------- | ------------ | --------- | ------------------- | ------------- | ------------------ | ------------------------------------------- | ------------------------------------------------- |
+| **VGG16**       | 99.95%       | 98.4%     | 0.98                | 0.78 min      | Wagi z ImageNet    | Stabilność, prostota, bardzo dobra jakość   | Bardzo duża liczba parametrów, wolny bez GPU      |
+| **ResNet101**   | 99.87%       | 98.6%     | 0.99                | 1.18 min      | Wagi z ImageNet    | Głęboka architektura, świetna generalizacja | Długi czas treningu, duże zużycie pamięci         |
+| **InceptionV3** | 92.15%       | 91.4%     | 0.91                | 2.29 min      | Wagi z ImageNet    | Dobre wyniki po tuningu, szybkie operacje   | Wrażliwy na hiperparametry, dłuższy czas treningu |
+| **MobileNetV2** | 99.00%       | 96.2%     | 0.96                | 0.64 min      | Wagi z ImageNet    | Bardzo lekki, szybki, dobre wyniki          | Minimalnie niższa jakość niż ResNet/VGG           |
